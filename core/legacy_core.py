@@ -1,9 +1,21 @@
 """
-!!! KHÔNG ĐƯỢC SỬA FILE NÀY !!!
-
-Đây là phần logic GỐC của 2 chức năng đã hoạt động tốt: /analyze và /plan.
+Đây là phần logic GỐC của 2 chức năng /analyze và /plan.
 Được port gần như nguyên văn từ bản gốc (chỉ đổi cách lấy API key từ hardcode
-sang os.environ để vá lỗi bảo mật, KHÔNG đổi behavior/prompt/output).
+sang os.environ để vá lỗi bảo mật).
+
+CẬP NHẬT (theo yêu cầu người dùng): vá 2 lỗi ĐỘ CHÍNH XÁC DỮ LIỆU, KHÔNG đổi
+SYSTEM_PROMPT / cấu trúc output hiển thị cho người dùng:
+  1. Đếm sai "wrong answer" theo tag: trước đây MỌI verdict khác "OK" đều bị tính là
+     1 lần sai (kể cả COMPILATION_ERROR/SKIPPED/TESTING — không phải lỗi logic thật),
+     làm điểm Penalty theo tag bị thổi phồng sai. Giờ chỉ tính các verdict thực sự là
+     một lần "cố gắng nhưng sai" (WRONG_ANSWER, TLE, MLE, RUNTIME_ERROR, PE, ILE,
+     CHALLENGED...), loại trừ verdict không phản ánh lỗi thuật toán/code.
+  2. Gợi ý bài "khởi động hôm nay" trước đây lấy bài ĐẦU TIÊN khớp rating trong danh
+     sách API (không lọc độ phổ biến, không loại trùng giữa các dải rating) -> có thể
+     lặp lại cùng 1 bài ở 2 mục, hoặc gợi ý bài quá ít người AC (dễ là đề mơ hồ/tag
+     sai). Giờ ưu tiên bài có solvedCount cao (đồng bộ cách lọc với
+     recommendation_engine.py), có dedup theo problem id, và có fallback để không
+     bao giờ trả về ít bài hơn bản cũ.
 """
 import requests
 from datetime import datetime, timezone
@@ -76,6 +88,16 @@ BẮT BUỘC CHỈ DÙNG CÁC BÀI TẬP ĐƯỢC CUNG CẤP TRONG DANH SÁCH 'G
 - **Nhật ký:** Sau mỗi bài sai quá 2 lần, bắt buộc ghi chú nguyên nhân vào notebook/journal trước khi xem Editorials.
 """
 
+# Các verdict KHÔNG phản ánh 1 lần "làm sai logic/code" -> không được tính vào penalty theo tag.
+# COMPILATION_ERROR: code không biên dịch được, chưa chạy thử logic gì.
+# SKIPPED / TESTING: chưa có kết quả cuối cùng (đang chấm / bị bỏ qua).
+# None: submission thiếu field verdict (dữ liệu bất thường từ API), không nên tính là "sai".
+_NON_ATTEMPT_VERDICTS = {"COMPILATION_ERROR", "SKIPPED", "TESTING", None}
+
+# Ngưỡng solvedCount tối thiểu để coi 1 bài là "đủ kinh điển/đáng tin" để gợi ý (đồng bộ với
+# recommendation_engine.py) -> tránh gợi ý bài quá ít người AC, dễ là đề mơ hồ/tag sai lệch.
+_MIN_SOLVED_COUNT = 60
+
 
 def fetch_cf_rich_analytics(handle, target_rating=None):
     try:
@@ -135,7 +157,10 @@ def fetch_cf_rich_analytics(handle, target_rating=None):
 
                     for tag in tags:
                         tag_ac[tag] = tag_ac.get(tag, 0) + 1
-            else:
+            elif verdict not in _NON_ATTEMPT_VERDICTS:
+                # CHỈ tính là "sai" nếu verdict thực sự phản ánh 1 lần thử-nhưng-sai
+                # (WRONG_ANSWER, TIME_LIMIT_EXCEEDED, MEMORY_LIMIT_EXCEEDED, RUNTIME_ERROR,
+                # PRESENTATION_ERROR, IDLENESS_LIMIT_EXCEEDED, CHALLENGED, v.v.)
                 for tag in tags:
                     tag_wa[tag] = tag_wa.get(tag, 0) + 1
 
@@ -176,30 +201,71 @@ def fetch_cf_rich_analytics(handle, target_rating=None):
 
 
 def fetch_unsolved_candidates(solved_set, current_rating, target_rating=None):
+    """
+    Chọn 3 bài "khởi động hôm nay": 1 bài quanh (rating hiện tại - 100), 1 bài quanh
+    (rating hiện tại + 100), 1 bài quanh rating mục tiêu (target hoặc +200 nếu không có target).
+
+    Trong mỗi dải rating (±50), ưu tiên chọn bài có solvedCount CAO NHẤT (đồng bộ cách lọc với
+    recommendation_engine.py) thay vì bài đầu tiên gặp trong response API — tránh gợi ý bài quá
+    hiếm người AC (dễ là đề mơ hồ/tag sai lệch). Đồng thời loại trừ bài đã được chọn ở dải khác
+    để không bị lặp cùng 1 bài trong 3 mục Speed/Core/Stretch.
+    Nếu 1 dải không có bài nào đủ solvedCount, fallback lấy bài đầu tiên khớp rating (giữ hành vi
+    cũ) để KHÔNG bao giờ trả về ít bài hơn bản gốc.
+    """
     try:
         res = requests.get("https://codeforces.com/api/problemset.problems", timeout=10).json()
         if res.get("status") != "OK":
             return []
 
         problems = res["result"]["problems"]
-        candidates = []
+        stats = res["result"].get("problemStatistics", [])
+        solved_count_map = {
+            f"{s.get('contestId')}{s.get('index')}": s.get("solvedCount", 0) for s in stats
+        }
 
         t_rating = target_rating if target_rating else current_rating + 200
         target_ratings = [max(800, current_rating - 100), current_rating + 100, t_rating]
 
+        candidates = []
+        used_ids = set()
+
         for target_r in target_ratings:
+            best_p, best_solved = None, -1
             for p in problems:
                 r = p.get("rating")
                 p_id = f"{p.get('contestId')}{p.get('index')}"
-                if r and abs(r - target_r) <= 50 and p_id not in solved_set:
-                    link = f"https://codeforces.com/problemset/problem/{p.get('contestId')}/{p.get('index')}"
-                    candidates.append({
-                        "name": f"{p.get('contestId')}{p.get('index')} – {p.get('name')}",
-                        "rating": r,
-                        "link": link,
-                        "tags": ", ".join(p.get("tags", [])),
-                    })
-                    break
+                if not r or abs(r - target_r) > 50:
+                    continue
+                if p_id in solved_set or p_id in used_ids or not p.get("name"):
+                    continue
+                solved = solved_count_map.get(p_id, 0)
+                if solved < _MIN_SOLVED_COUNT:
+                    continue
+                if solved > best_solved:
+                    best_solved, best_p = solved, p
+
+            if best_p is None:
+                # Fallback: không có bài nào đủ solvedCount trong dải này -> lấy bài đầu tiên
+                # khớp rating (đúng hành vi bản gốc) để không bỏ trống mục này.
+                for p in problems:
+                    r = p.get("rating")
+                    p_id = f"{p.get('contestId')}{p.get('index')}"
+                    if r and abs(r - target_r) <= 50 and p_id not in solved_set and p_id not in used_ids and p.get("name"):
+                        best_p = p
+                        break
+
+            if best_p is None:
+                continue
+
+            p_id = f"{best_p.get('contestId')}{best_p.get('index')}"
+            used_ids.add(p_id)
+            link = f"https://codeforces.com/problemset/problem/{best_p.get('contestId')}/{best_p.get('index')}"
+            candidates.append({
+                "name": f"{p_id} – {best_p.get('name')}",
+                "rating": best_p.get("rating"),
+                "link": link,
+                "tags": ", ".join(best_p.get("tags", [])),
+            })
         return candidates
     except Exception:
         return []

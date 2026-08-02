@@ -8,8 +8,10 @@ from . import common
 
 SYSTEM_PROMPT = """Bạn là Competitive Programming Coach. Trình bày danh sách bài được đề xuất theo các nhóm:
 Warm-up, Core, Challenge, Review, Must Solve — CHỈ sử dụng đúng những bài được cung cấp sẵn bên dưới
-(không bịa thêm bài hay đổi rating/tags/link). Với mỗi bài: Tên, Rating, Tags, Lý do recommend (diễn giải
-TỪ breakdown/lý do cụ thể đã cho, không liệt kê số thô, không lặp khuôn câu giữa các bài), Takeaway (kiến
+(không bịa thêm bài hay đổi rating/tags/link). Với mỗi bài, BẮT BUỘC hiển thị đủ (không được bỏ qua dù
+trình bày dạng bảng hay bullet ngắn gọn): Mã bài Codeforces (contestId+index, vd "1543D") + Link
+Codeforces đầy đủ (dùng ĐÚNG dữ liệu cho sẵn), Tên, Rating, Tags, Lý do recommend (diễn giải TỪ
+breakdown/lý do cụ thể đã cho, không liệt kê số thô, không lặp khuôn câu giữa các bài), Takeaway (kiến
 thức chính CỤ THỂ của riêng bài đó, không viết chung chung áp dụng cho mọi bài). Markdown, ngắn gọn, dùng
 bullet hoặc bảng.
 
@@ -58,10 +60,12 @@ def run(handle, tag=None, rating=None):
             p = pick["problem"]
             reasons = engine.explain(pick, mode, profile)
             all_problems.append(p)
+            problem_code = f"{p.get('contestId')}{p.get('index')}"
+            problem_link = f"https://codeforces.com/problemset/problem/{p.get('contestId')}/{p.get('index')}"
             lines.append(
-                f"- {p['name']} | rating {p.get('rating')} | tags: {', '.join(p.get('tags', []))} | "
+                f"- {p['name']} | mã bài: {problem_code} | link: {problem_link} | "
+                f"rating {p.get('rating')} | tags: {', '.join(p.get('tags', []))} | "
                 f"solvedCount: {p.get('solvedCount', 0)} | "
-                f"link: https://codeforces.com/problemset/problem/{p.get('contestId')}/{p.get('index')} | "
                 f"lý do: {'; '.join(reasons)} | breakdown: {pick['breakdown']}"
             )
 
@@ -74,10 +78,11 @@ def run(handle, tag=None, rating=None):
             p = dict(p)
             p["id"] = pid
             all_problems.append(p)
+            problem_link = f"https://codeforces.com/problemset/problem/{p.get('contestId')}/{p.get('index')}"
             lines.append(
-                f"- {p['name']} | rating {p.get('rating')} | tags: {', '.join(p.get('tags', []))} | "
+                f"- {p['name']} | mã bài: {pid} | link: {problem_link} | "
+                f"rating {p.get('rating')} | tags: {', '.join(p.get('tags', []))} | "
                 f"solvedCount: {p.get('solvedCount', 0)} | "
-                f"link: https://codeforces.com/problemset/problem/{p.get('contestId')}/{p.get('index')} | "
                 f"lý do: Bài kinh điển với khoảng {p.get('solvedCount', 0):,} lượt AC toàn cầu, gần rating hiện tại"
             )
 
@@ -86,7 +91,8 @@ def run(handle, tag=None, rating=None):
 
     user_prompt = (
         f"{common.context_block(profile)}\nBộ lọc: tag={tag or 'không'}, rating={rating or 'không'}\n\n"
-        f"Danh sách theo nhóm do Recommendation Engine chọn sẵn:\n" + "\n".join(lines)
+        f"Danh sách theo nhóm do Recommendation Engine chọn sẵn (BẮT BUỘC hiển thị mã bài + link cho "
+        f"mỗi bài trong output):\n" + "\n".join(lines)
     )
     result = common.ask(SYSTEM_PROMPT, user_prompt)
     storage.log_recommendation(handle, all_problems, mode="recommend")

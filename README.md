@@ -1,84 +1,114 @@
-# Codeforces AI Coach
-
-CLI coach cho luyện tập Competitive Programming trên Codeforces — dùng AI (Groq) để phân tích
-hiện trạng, lập lộ trình, gợi ý bài tập cá nhân hoá, giải thích thuật toán, cho hint không spoil,
-review code, theo dõi tiến bộ/lỗi lặp lại theo thời gian...
-
-> 📖 Xem toàn bộ danh sách lệnh + ví dụ dùng chi tiết tại [`GUIDE.md`](./GUIDE.md).
+Dưới đây là nội dung `README.md` đã được định dạng lại chuẩn chỉnh, chuyên nghiệp, đẹp mắt hơn với badge, icon sinh động và cấu trúc trực quan để dễ theo dõi.
 
 ---
 
-## Tính năng chính
+# 🏆 Codeforces AI Coach
 
-- **Roadmap cá nhân hoá**: `/analyze`, `/plan` — báo cáo hiện trạng + lộ trình lên target rating.
-- **Recommendation Engine dùng chung**: `/daily`, `/recommend` — chọn bài dựa trên độ khó phù hợp,
-  điểm yếu, roadmap, độ phổ biến, tránh lặp lại bài đã gợi ý.
-- **Phân tích**: `/weakness`, `/contest_review`, `/submission_review(_cf)`, `/code_review`,
-  `/complexity`.
-- **Học tập**: `/editorial(_cf/_link)`, `/hint(_cf/_link)`, `/pattern(_cf/_link)`, `/socratic(_cf/_link)`,
-  `/learning_graph`, `/template`, `/kb`, `/impl`, `/flashcards` (tương tác, có chấm điểm + lịch sử).
-- **Theo dõi lâu dài**: `/progress` (mastery theo topic), `/mistakes` + `/mistake_log` +
-  `/mistake_clear` (log lỗi lặp lại, tự gộp lỗi trùng, xoá được khi cần), `/strategy`.
-- **UX crawl đề bài chống 403**: các lệnh `_cf`/`_link` tự crawl đề từ Codeforces/URL; nếu bị chặn
-  (HTTP 403, Cloudflare, layout đổi...) sẽ **không văng lệnh** — tự chuyển sang cho bạn paste đề
-  tay rồi tiếp tục xử lý bình thường.
+> **CLI Coach hỗ trợ luyện tập Competitive Programming (Codeforces) sử dụng AI (Groq)** — Phân tích hiện trạng, lập lộ trình cá nhân hóa, gợi ý bài tập, giải thích thuật toán, đưa ra hint không spoil, review code và theo dõi tiến độ/lỗi lặp lại.
+
+📖 **Hướng dẫn chi tiết**: Xem toàn bộ danh sách lệnh và ví dụ sử dụng tại [`GUIDE.md`](https://www.google.com/search?q=./GUIDE.md).
 
 ---
 
-## Cài đặt
+## ✨ Tính năng chính
+
+* **🎯 Roadmap & Lộ trình**:
+* `/analyze`, `/plan` — Báo cáo hiện trạng kỹ năng & lập lộ trình leo target rating.
+
+
+* **💡 Recommendation Engine**:
+* `/daily`, `/recommend` — Tự động chọn bài dựa trên rating phù hợp, điểm yếu, lộ trình và độ phổ biến (tránh lặp lại bài đã gợi ý).
+
+
+* **📊 Phân tích & Đánh giá**:
+* `/weakness`, `/contest_review`, `/submission_review(_cf)`, `/code_review`, `/complexity`.
+
+
+* **📚 Học tập & Luyện tập**:
+* `/editorial(_cf/_link)`, `/hint(_cf/_link)`, `/pattern(_cf/_link)`, `/socratic(_cf/_link)`.
+* `/learning_graph`, `/template`, `/kb`, `/impl`.
+* `/flashcards` — Thẻ ghi nhớ tương tác, hỗ trợ chấm điểm và lưu lịch sử học tập.
+
+
+* **📈 Theo dõi dài hạn**:
+* `/progress` — Đo lường mức độ thành thạo (mastery) theo từng topic.
+* `/mistakes`, `/mistake_log`, `/mistake_clear` — Quản lý nhật ký lỗi lặp lại, tự động gộp lỗi trùng lặp.
+* `/strategy` — Định hình tư duy và chiến thuật làm bài.
+
+
+* **🛡️ Crawl đề bài thông minh (Anti-403 Fallback)**:
+* Các lệnh có hậu tố `_cf`/`_link` hỗ trợ tự động cào đề từ Codeforces hoặc URL bất kỳ.
+* Nếu bị chặn (`HTTP 403`, Cloudflare, thay đổi DOM structure...), chương trình **không bị văng** — hệ thống sẽ linh hoạt chuyển sang chế độ cho phép bạn dán (paste) đề thủ công để tiếp tục xử lý.
+
+
+
+---
+
+## 🚀 Cài đặt
 
 ```bash
+# 1. Clone repository
 git clone <repo-url>
 cd <repo>
-pip install -r requirements.txt   # requests, rich
+
+# 2. Cài đặt các thư viện phụ thuộc (requests, rich, ...)
+pip install -r requirements.txt
+
 ```
 
-### Cấu hình biến môi trường
+### 🔑 Cấu hình biến môi trường
+
+Chương trình đọc cấu hình trực tiếp qua `os.environ` (chi tiết tại `core/config.py`).
+
+| Biến môi trường | Trạng thái | Mô tả |
+| --- | --- | --- |
+| `GROQ_API_KEY` | **Bắt buộc** | Lấy API Key miễn phí tại [Groq Console](https://console.groq.com/home) |
+| `GROQ_MODEL` | Tuỳ chọn | Model sử dụng (Mặc định: `llama-3.3-70b-versatile`) |
+| `CF_COACH_DATA_DIR` | Tuỳ chọn | Đường dẫn lưu profile & lịch sử local (Mặc định: `~/.cf_coach`) |
+
+**Thực thi trên Terminal:**
 
 ```bash
-export GROQ_API_KEY="gsk_xxx"                  # BẮT BUỘC — lấy tại https://console.groq.com
-export GROQ_MODEL="llama-3.3-70b-versatile"    # tuỳ chọn, có default
-export CF_COACH_DATA_DIR="$HOME/.cf_coach"     # tuỳ chọn — nơi lưu profile/lịch sử local
+export GROQ_API_KEY="gsk_xxx"
+export GROQ_MODEL="llama-3.3-70b-versatile"     # Tuỳ chọn
+export CF_COACH_DATA_DIR="$HOME/.cf_coach"       # Tuỳ chọn
+
 ```
 
-Chương trình đọc các biến này qua `os.environ` (xem `core/config.py`) — **không** tự đọc file
-`.env`. Nếu muốn dùng file `.env`, cài thêm `python-dotenv` và tự `load_dotenv()` trước khi chạy,
-hoặc export thủ công như trên mỗi phiên terminal.
+> **Mẹo**: Chương trình không tự động đọc file `.env`. Nếu muốn sử dụng `.env`, hãy cài thêm `python-dotenv` và gọi `load_dotenv()` trong dự án trước khi khởi chạy.
 
-### Chạy
+### 🏁 Chạy chương trình
 
 ```bash
 python main.py
+
 ```
 
-Gõ `/help` để xem danh sách lệnh, `/use <handle>` để đặt Codeforces handle mặc định.
+* Gõ `/help` để xem danh sách câu lệnh.
+* Gõ `/use <handle>` để thiết lập Codeforces Handle mặc định.
 
 ---
 
-## Cấu trúc project
+## 📁 Cấu trúc Project
 
-```
+```text
 .
-├── main.py                  # entrypoint CLI
-├── core/                    # logic dùng chung, không phụ thuộc CLI
-│   ├── config.py             # đọc biến môi trường (API key, model, data dir)
-│   ├── storage.py            # lưu/đọc lịch sử local (JSON theo từng handle)
-│   ├── cf_client.py          # wrapper Codeforces API + crawler HTML best-effort
-│   ├── groq_client.py        # gọi Groq LLM API
-│   ├── user_profile.py       # build profile tổng hợp (rating, tag mạnh/yếu, roadmap...)
-│   ├── recommendation_engine.py / difficulty_estimator.py
-│   ├── mastery.py / learning_kb.py / constraint_parser.py / legacy_core.py
-└── features/                 # mỗi file = 1 command/nhóm command
-    ├── common.py              # helper dùng chung (context_block, ask(), fetch_source_text...)
+├── main.py                     # Entrypoint CLI
+├── core/                       # Core Logic (độc lập với interface CLI)
+│   ├── config.py               # Quản lý cấu hình & biến môi trường
+│   ├── storage.py              # Xử lý đọc/ghi data local dạng JSON theo handle
+│   ├── cf_client.py             # Codeforces API wrapper + HTML crawler (best-effort)
+│   ├── groq_client.py           # Wrapper kết nối Groq LLM API
+│   ├── user_profile.py          # Báo cáo tổng hợp (rating, tag mạnh/yếu, roadmap...)
+│   ├── recommendation_engine.py # Bộ máy gợi ý bài tập
+│   ├── difficulty_estimator.py  # Đánh giá độ khó tương đối
+│   └── mastery.py / learning_kb.py / constraint_parser.py / legacy_core.py
+└── features/                   # Mỗi file đảm nhận 1 lệnh hoặc nhóm lệnh CLI
+    ├── common.py               # Utilities chung (context_block, ask(), fetch_source_text...)
     ├── editorial.py / hint.py / pattern.py / socratic.py
-    ├── mistakes.py / progress.py / weakness.py / ...
+    ├── mistakes.py / progress.py / weakness.py
     └── ...
+
 ```
 
-Dữ liệu cá nhân (roadmap, mistake log, flashcard history, recommend log) lưu **local** dạng JSON
-tại `CF_COACH_DATA_DIR` (mặc định `~/.cf_coach`, **nằm ngoài thư mục project** nên không bị commit
-nhầm — xem thêm phần Bảo mật bên dưới).
-"Get groq API key: https://console.groq.com/home"
-Feel free to use
----
-
+🔒 **Lưu trữ dữ liệu cá nhân**: Lộ trình, nhật ký lỗi, lịch sử flashcard, log bài gợi ý... đều được lưu **cục bộ (local)** dưới dạng file JSON tại thư mục `CF_COACH_DATA_DIR` (mặc định: `~/.cf_coach`). Thư mục này nằm **ngoài project**, hoàn toàn an toàn và không lo bị push nhầm lên Git repository.

@@ -1,6 +1,4 @@
-Dưới đây là nội dung `README.md` đã được định dạng lại chuẩn chỉnh, chuyên nghiệp, đẹp mắt hơn với badge, icon sinh động và cấu trúc trực quan để dễ theo dõi.
 
----
 
 # 🏆 Codeforces AI Coach
 
@@ -119,4 +117,4 @@ python main.py
 
 ```
 
-🔒 **Lưu trữ dữ liệu cá nhân**: Lộ trình, nhật ký lỗi, lịch sử flashcard, log bài gợi ý... đều được lưu **cục bộ (local)** dưới dạng file JSON tại thư mục `CF_COACH_DATA_DIR` (mặc định: `~/.cf_coach`). Thư mục này nằm **ngoài project**, hoàn toàn an toàn và không lo bị push nhầm lên Git repository.
+

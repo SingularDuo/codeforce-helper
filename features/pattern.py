@@ -18,7 +18,9 @@ Interval DP, Matrix Exponentiation, Suffix Structures (SA/SAM), Xor Basis/Linear
 CHỈ kết luận một pattern khi có dấu hiệu rõ ràng trong input; nếu không chắc, liệt kê các pattern khả dĩ
 kèm lý do nghi ngờ thay vì khẳng định chắc chắn một pattern duy nhất.
 Sau đó, dựa trên danh sách bài luyện tập tương tự do Recommendation Engine chọn sẵn bên dưới, đề xuất
-lại các bài đó (không tự bịa thêm bài khác)."""
+lại các bài đó (không tự bịa thêm bài khác). Với mỗi bài đề xuất lại, BẮT BUỘC kèm Mã bài Codeforces
+(contestId+index, vd "1543D") và Link Codeforces đầy đủ đã cho sẵn — không được bỏ qua dù trình bày
+ngắn gọn."""
 
 
 def _with_recommendations(handle, description_or_code, profile=None):
@@ -27,12 +29,15 @@ def _with_recommendations(handle, description_or_code, profile=None):
     exclude = set(profile["solved_ids"]) | set(profile["recent_recommended_ids"])
     picks = engine.recommend(problems, profile, mode="core", count=3, exclude_ids=exclude)
     picks_lines = [
-        f"- {p['problem']['name']} | rating {p['problem'].get('rating')} | tags {', '.join(p['problem'].get('tags', []))}"
+        f"- {p['problem']['name']} | mã bài: {p['problem'].get('contestId')}{p['problem'].get('index')} | "
+        f"link: https://codeforces.com/problemset/problem/{p['problem'].get('contestId')}/{p['problem'].get('index')} | "
+        f"rating {p['problem'].get('rating')} | tags {', '.join(p['problem'].get('tags', []))}"
         for p in picks
     ]
     return (
         f"Mô tả bài / code cần nhận diện pattern:\n{description_or_code}\n\n"
-        f"Bài luyện tập tương tự do Recommendation Engine chọn sẵn:\n" + "\n".join(picks_lines or ["(không có)"])
+        f"Bài luyện tập tương tự do Recommendation Engine chọn sẵn (BẮT BUỘC hiển thị mã bài + link "
+        f"cho mỗi bài):\n" + "\n".join(picks_lines or ["(không có)"])
     )
 
 

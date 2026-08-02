@@ -4,7 +4,7 @@ CLI coach cho luyện tập Competitive Programming trên Codeforces — dùng A
 hiện trạng, lập lộ trình, gợi ý bài tập cá nhân hoá, giải thích thuật toán, cho hint không spoil,
 review code, theo dõi tiến bộ/lỗi lặp lại theo thời gian...
 
-> 📖 Xem toàn bộ danh sách lệnh + ví dụ dùng chi tiết tại [`USER_GUIDE.md`](./USER_GUIDE.md).
+> 📖 Xem toàn bộ danh sách lệnh + ví dụ dùng chi tiết tại [`GUIDE.md`](./USER_GUIDE.md).
 
 ---
 

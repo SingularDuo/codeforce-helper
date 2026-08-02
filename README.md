@@ -67,14 +67,22 @@ Chương trình đọc cấu hình trực tiếp qua `os.environ` (chi tiết t�
 | `CF_COACH_DATA_DIR` | Tuỳ chọn | Đường dẫn lưu profile & lịch sử local (Mặc định: `~/.cf_coach`) |
 
 **Thực thi trên Terminal:**
-
+**Macos/Linux**
 ```bash
 export GROQ_API_KEY="gsk_xxx"
 export GROQ_MODEL="llama-3.3-70b-versatile"     # Tuỳ chọn
 export CF_COACH_DATA_DIR="$HOME/.cf_coach"       # Tuỳ chọn
 
 ```
-
+**Windows**
+```bash
+// CMD
+set GROQ_API_KEY=gsk_xxx
+set GROQ_MODEL=llama-3.3-70b-versatile
+// Powershell
+$env:GROQ_API_KEY="gsk_xxx"
+$env:GROQ_MODEL="llama-3.3-70b-versatile"
+```
 > **Mẹo**: Chương trình không tự động đọc file `.env`. Nếu muốn sử dụng `.env`, hãy cài thêm `python-dotenv` và gọi `load_dotenv()` trong dự án trước khi khởi chạy.
 
 ### 🏁 Chạy chương trình

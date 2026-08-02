@@ -78,6 +78,7 @@ Gõ `/help` để xem danh sách lệnh, `/use <handle>` để đặt Codeforces
 Dữ liệu cá nhân (roadmap, mistake log, flashcard history, recommend log) lưu **local** dạng JSON
 tại `CF_COACH_DATA_DIR` (mặc định `~/.cf_coach`, **nằm ngoài thư mục project** nên không bị commit
 nhầm — xem thêm phần Bảo mật bên dưới).
+"Get groq API key: https://console.groq.com/home"
 Feel free to use
 ---
 

@@ -25,7 +25,10 @@ Recommendation Engine chọn sẵn bên dưới (KHÔNG được tự bịa bài
 gian đã cho — thời gian mỗi bài đã được HỆ THỐNG chia sẵn từ tổng số phút người dùng có hôm nay,
 KHÔNG dùng con số 10-25/30-70/60-120 mặc định cũ nữa).
 
-Với mỗi bài, trình bày rõ:
+Với mỗi bài, trình bày rõ (BẮT BUỘC đủ các mục sau, không được bỏ qua bất kỳ mục nào kể cả khi trình
+bày ngắn gọn dạng bullet):
+- Mã bài Codeforces (contestId+index, vd "1543D") VÀ Link Codeforces đầy đủ — dùng ĐÚNG mã/link đã
+  cho trong danh sách bên dưới, không tự bịa, không rút gọn, không bỏ sót
 - Tên bài, Rating, Tags, Độ khó (dùng emoji mức độ phù hợp)
 - Thời gian được chia (đúng số phút đã cho, không tự đổi)
 - Lý do recommend (dựa trên breakdown điểm được cung cấp, diễn giải lại bằng lời, không liệt kê số thô)
@@ -103,9 +106,11 @@ def run(handle, low_rating, high_rating, total_minutes):
         reasons = engine.explain(pick, mode, profile)
         p = pick["problem"]
         minutes = time_budget[mode]
+        problem_code = f"{p.get('contestId')}{p.get('index')}"
+        problem_link = f"https://codeforces.com/problemset/problem/{p.get('contestId')}/{p.get('index')}"
         picks_lines.append(
-            f"[{mode.upper()}] {p['name']} | rating {p.get('rating')} | tags: {', '.join(p.get('tags', []))} | "
-            f"link: https://codeforces.com/problemset/problem/{p.get('contestId')}/{p.get('index')} | "
+            f"[{mode.upper()}] {p['name']} | mã bài: {problem_code} | link: {problem_link} | "
+            f"rating {p.get('rating')} | tags: {', '.join(p.get('tags', []))} | "
             f"thời gian được chia: {minutes} phút | lý do: {'; '.join(reasons)} | "
             f"breakdown điểm: {pick['breakdown']}"
         )
@@ -122,7 +127,8 @@ def run(handle, low_rating, high_rating, total_minutes):
         f"Dải độ khó người dùng chọn hôm nay: {low_rating}-{high_rating} rating\n"
         f"Tổng thời gian có thể luyện tập hôm nay: {total_minutes} phút "
         f"(đã chia: {total_allocated} phút cho {len(chosen)} bài, phần dư nếu có nên dùng để đọc lại/nghỉ)\n\n"
-        f"Danh sách bài đã được Recommendation Engine chọn sẵn (bắt buộc dùng đúng các bài này):\n"
+        f"Danh sách bài đã được Recommendation Engine chọn sẵn (bắt buộc dùng đúng các bài này, "
+        f"BẮT BUỘC hiển thị mã bài + link cho mỗi bài):\n"
         + "\n".join(picks_lines)
     )
 
